@@ -1,0 +1,583 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #243247;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: #8CC8F2;
+    color: #12304A;
+    padding: 24px 16px;
+}
+
+.sidebar-brand {
+    padding: 0 12px 24px;
+    border-bottom: 1px solid #355066;
+    margin-bottom: 20px;
+}
+
+.sidebar-brand h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+}
+
+.sidebar-brand p {
+    margin: 0;
+    color: #12304A;
+    font-size: 18px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-nav a {
+    color: #12304A;
+    text-decoration: none;
+    padding: 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+    background: #2476a8;
+    color: white;
+}
+
+.admin-main {
+    flex: 1;
+    min-width: 0;
+    padding: 32px;
+}
+
+.admin-header {
+    margin-bottom: 28px;
+}
+
+.admin-header h1 {
+    margin-top: 0;
+}
+
+@media (max-width: 700px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+    }
+
+    .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-main {
+        padding: 20px;
+    }
+}
+
+/*Products and CAtegories Styles*/
+
+/* Products management */
+
+.product-form-section,
+.product-list-section {
+    background: #ffffff;
+    padding: 24px;
+    margin-bottom: 28px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(18, 48, 74, 0.08);
+}
+
+.product-form-section h2,
+.product-list-section h2 {
+    margin-top: 0;
+    color: #12304a;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.form-group label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #ccd7e2;
+    border-radius: 6px;
+    font: inherit;
+    background: #fff;
+    color: #243247;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: 2px solid #8cc8f2;
+    border-color: #2476a8;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.primary-button,
+.secondary-button,
+.delete-button {
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.primary-button {
+    background: #2476a8;
+    color: white;
+}
+
+.secondary-button {
+    background: #dceefa;
+    color: #12304a;
+}
+
+.delete-button {
+    background: #fde8e8;
+    color: #a32121;
+}
+
+.primary-button:hover {
+    background: #185b85;
+}
+
+.secondary-button:hover {
+    background: #c4e3f7;
+}
+
+.delete-button:hover {
+    background: #f8d0d0;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.product-table th,
+.product-table td {
+    padding: 13px;
+    text-align: left;
+    border-bottom: 1px solid #e1e8ef;
+    vertical-align: top;
+}
+
+.product-table th {
+    background: #edf5fb;
+    color: #12304a;
+}
+
+.product-table td p {
+    margin-bottom: 0;
+    font-size: 13px;
+    color: #536477;
+}
+
+.product-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.product-actions form {
+    margin: 0;
+}
+
+.status-label {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-label.active {
+    background: #dff5e5;
+    color: #176b35;
+}
+
+.status-label.inactive {
+    background: #e9edf2;
+    color: #536477;
+}
+
+.stock-empty {
+    color: #a32121;
+    font-weight: bold;
+}
+
+.notice {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 18px;
+}
+
+.notice.success {
+    background: #dff5e5;
+    color: #176b35;
+}
+
+.notice.error {
+    background: #fde8e8;
+    color: #a32121;
+}
+
+@media (max-width: 700px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: auto;
+    }
+
+    .product-form-section,
+    .product-list-section {
+        padding: 16px;
+    }
+}
+
+
+
+/* ========================================
+   HUMAN MATRIX - PROFESSIONAL DASHBOARD
+   Scoped styles preserve existing navigation
+======================================== */
+
+.hm-welcome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    margin: 26px 0 32px;
+    padding: 36px;
+    color: #ffffff;
+    background: linear-gradient(120deg, #101d35, #203d63);
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(16, 29, 53, 0.12);
+    overflow: hidden;
+}
+
+.hm-welcome-content {
+    max-width: 680px;
+}
+
+.hm-eyebrow {
+    display: inline-block;
+    margin-bottom: 14px;
+    color: #9ddcf4;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.7px;
+}
+
+.hm-welcome h2 {
+    margin: 0 0 14px;
+    color: #ffffff;
+    font-size: clamp(25px, 3vw, 36px);
+    line-height: 1.25;
+}
+
+.hm-welcome p {
+    max-width: 620px;
+    margin: 0 0 24px;
+    color: #d8e2ef;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.hm-primary-button {
+    display: inline-block;
+    padding: 12px 19px;
+    color: #10223b;
+    background: #9ddcf4;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.hm-primary-button:hover {
+    background: #c2edfc;
+    transform: translateY(-2px);
+}
+
+.hm-welcome-symbol {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 155px;
+    height: 155px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.hm-welcome-symbol span {
+    color: #9ddcf4;
+    font-size: 43px;
+    font-weight: 800;
+    letter-spacing: -2px;
+}
+
+.hm-welcome-symbol small {
+    margin-top: 5px;
+    color: #d8e2ef;
+    font-size: 8px;
+    letter-spacing: 1px;
+}
+
+.hm-section {
+    margin-bottom: 30px;
+}
+
+.hm-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.hm-section-heading h2,
+.hm-account-panel h2 {
+    margin: 0 0 7px;
+    color: #172b46;
+    font-size: 21px;
+}
+
+.hm-section-heading p,
+.hm-account-panel > div:first-child p {
+    margin: 0;
+    color: #718096;
+    font-size: 14px;
+}
+
+.hm-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.hm-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 24px;
+    color: inherit;
+    background: #ffffff;
+    border: 1px solid #e5eaf1;
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 0 5px 18px rgba(24, 39, 62, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease,
+                border-color 0.2s ease;
+}
+
+.hm-action-card:hover {
+    transform: translateY(-4px);
+    border-color: #9ddcf4;
+    box-shadow: 0 12px 26px rgba(24, 39, 62, 0.09);
+}
+
+.hm-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 18px;
+    color: #1d6089;
+    background: #e8f6fc;
+    border-radius: 12px;
+}
+
+.hm-action-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.hm-action-card h3 {
+    margin: 0 0 10px;
+    color: #172b46;
+    font-size: 17px;
+}
+
+.hm-action-card p {
+    margin: 0 0 20px;
+    color: #718096;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.hm-card-link {
+    margin-top: auto;
+    color: #17628e;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.hm-account-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-bottom: 25px;
+    padding: 25px;
+    background: #ffffff;
+    border: 1px solid #e5eaf1;
+    border-radius: 14px;
+}
+
+.hm-account-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.hm-account-details > div {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 16px;
+    background: #f7f9fc;
+    border-radius: 9px;
+    overflow-wrap: anywhere;
+}
+
+.hm-account-details span {
+    color: #718096;
+    font-size: 12px;
+}
+
+.hm-account-details strong {
+    color: #24364d;
+    font-size: 14px;
+}
+
+.hm-dashboard-footer {
+    padding: 12px 0;
+    color: #8290a2;
+    font-size: 12px;
+}
+
+.hm-dashboard-footer p {
+    margin: 0;
+}
+
+/* Responsive layout */
+@media (max-width: 1050px) {
+    .hm-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .hm-welcome-symbol {
+        width: 125px;
+        height: 125px;
+    }
+}
+
+@media (max-width: 650px) {
+    .hm-welcome {
+        padding: 25px 21px;
+    }
+
+    .hm-welcome-symbol {
+        display: none;
+    }
+
+    .hm-action-grid,
+    .hm-account-details {
+        grid-template-columns: 1fr;
+    }
+
+    .hm-action-card {
+        padding: 20px;
+    }
+
+    .hm-account-panel {
+        padding: 20px;
+    }
+}
+
+
+
+/* Force smaller graphics inside Quick Actions cards */
+.admin-main .hm-action-card .hm-action-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    margin-bottom: 12px !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+}
+
+.admin-main .hm-action-card .hm-action-icon svg,
+.admin-main .hm-action-card .hm-action-icon img {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    flex-shrink: 0 !important;
+    object-fit: contain;
+}
+
+

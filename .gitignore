@@ -1,0 +1,51 @@
+# ==========================================
+# Human Matrix - Git Ignore
+# ==========================================
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Local configuration containing credentials
+config/database.local.php
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Database backups / dumps
+*.bak
+*.backup
+*.dump
+database/backups/
+backups/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# IDE / editor settings
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Dependencies (if Composer is added later)
+vendor/
+
+# Node dependencies (if added later)
+node_modules/
+
+# Test/cache files
+.cache/
