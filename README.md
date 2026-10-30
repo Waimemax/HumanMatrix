@@ -63,9 +63,9 @@ The project is being developed as a full-stack web application using PHP, MariaD
 | Customer Dashboard | ✅ Implemented |
 | Product Catalogue | ✅ Implemented |
 | Product Search & Filtering | ✅ Implemented |
-| Shopping Cart | 🚧 In Development |
-| Checkout & Order Placement | 🚧 In Development |
-| Order Management | 🚧 In Development |
+| Shopping Cart | ✅ Implemented |
+| Checkout & Order Placement | ✅ Implemented |
+| Order Management | ✅ Implemented |
 | Inventory Management | 🚧 In Development |
 | Delivery Tracking | 📋 Planned |
 | Notifications | 📋 Planned |
