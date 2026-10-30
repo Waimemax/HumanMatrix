@@ -7,6 +7,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/database.php";
+require_once "../includes/notifications.php";
 
 function e($value)
 {
@@ -67,6 +68,8 @@ $statusCounts = [
     "cancelled"  => 0,
 ];
 $recentOrders = [];
+$recentNotifications = [];
+$unreadCount = 0;
 $dataError = false;
 
 try {
@@ -113,6 +116,18 @@ try {
     ");
     $orderStmt->execute([":user_id" => $userId]);
     $recentOrders = $orderStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // The latest notifications and how many are unread.
+    $noteStmt = $pdo->prepare("
+        SELECT id, title, message, is_read, created_at
+        FROM notifications
+        WHERE user_id = :user_id
+        ORDER BY id DESC
+        LIMIT 3
+    ");
+    $noteStmt->execute([":user_id" => $userId]);
+    $recentNotifications = $noteStmt->fetchAll(PDO::FETCH_ASSOC);
+    $unreadCount = unreadNotificationCount($pdo, $userId);
 } catch (PDOException $exception) {
     error_log("HumanMatrix customer dashboard error: " . $exception->getMessage());
     $dataError = true;
@@ -146,7 +161,8 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
             <a href="../index.php" class="nav-home">Home</a>
             <a href="product.php">Equipment</a>
             <a href="../cart/view.php">Cart<?= $cartLines > 0 ? " (" . $cartLines . ")" : "" ?></a>
-            <a href="#my-orders">My Orders</a>
+            <a href="orders.php">My Orders</a>
+            <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
             <a href="#my-account">My Account</a>
             <a href="../auth/logout.php" class="dashboard-logout">
                 <span aria-hidden="true">↪</span> Logout
@@ -239,7 +255,7 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
                     <?php endif; ?>
                 </a>
 
-                <a href="#my-orders" class="dashboard-card">
+                <a href="orders.php" class="dashboard-card">
                     <div class="dashboard-card-icon orders-icon">
                         <span aria-hidden="true">▤</span>
                     </div>
@@ -261,7 +277,7 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
                     <?php endif; ?>
 
                     <span class="dashboard-card-link">
-                        View orders <span aria-hidden="true">↓</span>
+                        View all orders <span aria-hidden="true">→</span>
                     </span>
                 </a>
 
@@ -283,6 +299,46 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
                 </div>
 
             </div>
+
+        </section>
+
+        <section class="account-panel" id="notifications">
+
+            <div class="account-panel-heading">
+                <div class="account-avatar" aria-hidden="true">&#9993;</div>
+
+                <div>
+                    <h2>Notifications</h2>
+                    <p>
+                        <?= $unreadCount > 0
+                            ? (int) $unreadCount . " unread update" . ($unreadCount === 1 ? "" : "s")
+                            : "You're all caught up" ?>
+                    </p>
+                </div>
+            </div>
+
+            <?php if (empty($recentNotifications)): ?>
+                <p>No notifications yet. We'll tell you when your orders move forward.</p>
+            <?php else: ?>
+                <ul style="list-style:none; padding:0; margin:0; display:grid; gap:8px;">
+                    <?php foreach ($recentNotifications as $note): ?>
+                        <li style="padding:10px 14px; border-radius:8px; border:1px solid #e5eaf0; background:<?= (int) $note["is_read"] === 0 ? "#eef6fc" : "#ffffff" ?>;">
+                            <strong>
+                                <?php if ((int) $note["is_read"] === 0): ?>
+                                    <span aria-label="Unread" style="color:#2476a8;">&#9679;</span>
+                                <?php endif; ?>
+                                <?= e($note["title"]) ?>
+                            </strong>
+                            <small style="margin-left:8px;"><?= e(date("d M Y, H:i", strtotime($note["created_at"]))) ?></small>
+                            <p style="margin:4px 0 0;"><?= e($note["message"]) ?></p>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <p style="margin-top:12px;">
+                <a href="notifications.php"><strong>View all notifications</strong></a>
+            </p>
 
         </section>
 
@@ -343,7 +399,7 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
                                         </span>
                                     </td>
                                     <td style="padding:8px;">
-                                        <a href="../cart/order_success.php?id=<?= (int) $order["id"] ?>">View</a>
+                                        <a href="order.php?id=<?= (int) $order["id"] ?>">View</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -351,12 +407,13 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
                     </table>
                 </div>
 
-                <?php if ($totalOrders > count($recentOrders)): ?>
-                    <p style="margin-top:12px;">
+                <p style="margin-top:12px;">
+                    <?php if ($totalOrders > count($recentOrders)): ?>
                         Showing your latest <?= count($recentOrders) ?> of
                         <?= (int) $totalOrders ?> orders.
-                    </p>
-                <?php endif; ?>
+                    <?php endif; ?>
+                    <a href="orders.php"><strong>View all orders</strong></a>
+                </p>
             <?php endif; ?>
 
         </section>

@@ -81,6 +81,7 @@ if (!is_string($paymentMethod) || !in_array($paymentMethod, ["before_delivery", 
 }
 
 require_once "../config/database.php";
+require_once "../includes/notifications.php";
 
 try {
     // The facility must exist and be active. The name is read from the
@@ -234,6 +235,15 @@ try {
     }
 
     $pdo->commit();
+
+    // Tell the customer their order was received. This never blocks the order.
+    createNotification(
+        $pdo,
+        (int) $_SESSION["user_id"],
+        "Order placed",
+        "Your order " . orderReference($orderId) . " has been placed. "
+        . "HumanMatrix will confirm it shortly."
+    );
 
     // Order placed: clear the cart and the saved form values.
     $_SESSION["cart"] = [];

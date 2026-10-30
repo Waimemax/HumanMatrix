@@ -12,6 +12,7 @@ if (($_SESSION["role"] ?? "") !== "admin") {
 }
 
 require_once "../config/database.php";
+require_once "../includes/notifications.php";
 
 if (empty($_SESSION["csrf_token"])) {
     $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
@@ -50,6 +51,69 @@ function paymentMethodLabel(string $method): string
 function statusLabel(string $status): string
 {
     return ucfirst(str_replace("_", " ", $status));
+}
+
+// The deliveries table uses the same steps as orders, except that a
+// "confirmed" order is still waiting for delivery to start.
+function deliveryStatusFor(string $orderStatus): string
+{
+    return $orderStatus === "confirmed" ? "pending" : $orderStatus;
+}
+
+// Create or update the delivery record for an order. Call this inside the
+// same transaction that changes the order, after the order row is locked.
+function syncDelivery(PDO $pdo, int $orderId, string $orderStatus): int
+{
+    $orderStmt = $pdo->prepare("SELECT delivery_address FROM orders WHERE id = :id");
+    $orderStmt->execute([":id" => $orderId]);
+    $address = $orderStmt->fetchColumn();
+
+    if ($address === false) {
+        throw new RuntimeException("Order not found.");
+    }
+
+    $find = $pdo->prepare("SELECT id FROM deliveries WHERE order_id = :order_id LIMIT 1");
+    $find->execute([":order_id" => $orderId]);
+    $deliveryId = $find->fetchColumn();
+
+    if ($deliveryId === false) {
+        // A cancelled order that never had a delivery needs no record.
+        if ($orderStatus === "cancelled") {
+            return 0;
+        }
+
+        $insert = $pdo->prepare("
+            INSERT INTO deliveries (order_id, delivery_address, delivery_status)
+            VALUES (:order_id, :address, :status)
+        ");
+        $insert->execute([
+            ":order_id" => $orderId,
+            ":address"  => $address,
+            ":status"   => deliveryStatusFor($orderStatus),
+        ]);
+
+        $deliveryId = (int) $pdo->lastInsertId();
+    }
+
+    $sets = ["delivery_status = :status"];
+
+    if (in_array($orderStatus, ["dispatched", "in_transit", "delivered"], true)) {
+        $sets[] = "dispatch_date = COALESCE(dispatch_date, NOW())";
+    }
+
+    if ($orderStatus === "delivered") {
+        $sets[] = "delivered_date = NOW()";
+    }
+
+    $update = $pdo->prepare(
+        "UPDATE deliveries SET " . implode(", ", $sets) . " WHERE id = :id"
+    );
+    $update->execute([
+        ":status" => deliveryStatusFor($orderStatus),
+        ":id"     => (int) $deliveryId,
+    ]);
+
+    return (int) $deliveryId;
 }
 
 // Which status changes are allowed from each current status.
@@ -93,7 +157,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             // Lock the order so two admins cannot change it at once.
             $lock = $pdo->prepare("
-                SELECT status, payment_method, payment_status
+                SELECT user_id, status, payment_method, payment_status
                 FROM orders
                 WHERE id = :id
                 FOR UPDATE
@@ -123,7 +187,59 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 $pdo->commit();
 
+                createNotification(
+                    $pdo,
+                    (int) $current["user_id"],
+                    "Payment received",
+                    "Payment for your order " . orderReference($orderId) . " has been confirmed."
+                );
+
                 header("Location: order_view.php?id=" . $orderId . "&paid=1");
+                exit;
+            }
+
+            if ($action === "set_eta") {
+                if (in_array($current["status"], ["pending", "delivered", "cancelled"], true)) {
+                    throw new RuntimeException(
+                        "Confirm the order before scheduling delivery, and note that "
+                        . "delivered or cancelled orders cannot be rescheduled."
+                    );
+                }
+
+                $etaInput = trim((string) ($_POST["estimated_delivery"] ?? ""));
+                $etaDate = DateTime::createFromFormat("Y-m-d", $etaInput);
+
+                if (
+                    !$etaDate ||
+                    $etaDate->format("Y-m-d") !== $etaInput ||
+                    $etaInput < date("Y-m-d")
+                ) {
+                    throw new RuntimeException(
+                        "Enter a valid delivery date that is today or later."
+                    );
+                }
+
+                $deliveryId = syncDelivery($pdo, $orderId, $current["status"]);
+
+                $etaStmt = $pdo->prepare("
+                    UPDATE deliveries SET estimated_delivery = :eta WHERE id = :id
+                ");
+                $etaStmt->execute([
+                    ":eta" => $etaInput . " 00:00:00",
+                    ":id"  => $deliveryId,
+                ]);
+
+                $pdo->commit();
+
+                createNotification(
+                    $pdo,
+                    (int) $current["user_id"],
+                    "Delivery date set",
+                    "The expected delivery date for your order " . orderReference($orderId)
+                    . " is " . $etaDate->format("d M Y") . "."
+                );
+
+                header("Location: order_view.php?id=" . $orderId . "&eta=1");
                 exit;
             }
 
@@ -156,6 +272,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 ":id"     => $orderId,
             ]);
 
+            // Keep the delivery record in step with the order.
+            syncDelivery($pdo, $orderId, $newStatus);
+
             // A cancelled order puts its stock back on the shelf.
             if ($newStatus === "cancelled") {
                 $itemsStmt = $pdo->prepare("
@@ -181,6 +300,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $pdo->commit();
 
+            $notice = orderStatusNotice($newStatus, orderReference($orderId));
+
+            if ($notice !== null) {
+                createNotification(
+                    $pdo,
+                    (int) $current["user_id"],
+                    $notice[0],
+                    $notice[1]
+                );
+            }
+
             header("Location: order_view.php?id=" . $orderId . "&updated=1");
             exit;
         } catch (RuntimeException $exception) {
@@ -201,6 +331,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 // Load the order and its items.
 $order = null;
 $items = [];
+$delivery = null;
 
 try {
     $stmt = $pdo->prepare("
@@ -223,6 +354,15 @@ try {
         ");
         $itemStmt->execute([":order_id" => $orderId]);
         $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $deliveryStmt = $pdo->prepare("
+            SELECT delivery_status, dispatch_date, estimated_delivery, delivered_date
+            FROM deliveries
+            WHERE order_id = :order_id
+            LIMIT 1
+        ");
+        $deliveryStmt->execute([":order_id" => $orderId]);
+        $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 } catch (PDOException $exception) {
     error_log("Admin order view error: " . $exception->getMessage());
@@ -267,6 +407,8 @@ if (
             <p class="notice success">Order status updated.</p>
         <?php elseif (isset($_GET["paid"])): ?>
             <p class="notice success">Payment confirmed.</p>
+        <?php elseif (isset($_GET["eta"])): ?>
+            <p class="notice success">Expected delivery date saved.</p>
         <?php endif; ?>
 
         <?php if ($error !== ""): ?>
@@ -314,6 +456,48 @@ if (
                         <?= e(date("d M Y, H:i", strtotime($order["paid_at"]))) ?></small>
                 <?php endif; ?>
             </p>
+
+            <h3>Delivery</h3>
+            <p>
+                <?php if (!empty($delivery["estimated_delivery"])): ?>
+                    <strong>Expected:</strong>
+                    <?= e(date("d M Y", strtotime($delivery["estimated_delivery"]))) ?>
+                <?php else: ?>
+                    <strong>Expected:</strong> not scheduled yet
+                <?php endif; ?>
+
+                <?php if (!empty($delivery["dispatch_date"])): ?>
+                    <br><strong>Dispatched:</strong>
+                    <?= e(date("d M Y, H:i", strtotime($delivery["dispatch_date"]))) ?>
+                <?php endif; ?>
+
+                <?php if (!empty($delivery["delivered_date"])): ?>
+                    <br><strong>Delivered:</strong>
+                    <?= e(date("d M Y, H:i", strtotime($delivery["delivered_date"]))) ?>
+                <?php endif; ?>
+            </p>
+
+            <?php if (!in_array($order["status"], ["pending", "delivered", "cancelled"], true)): ?>
+                <form method="POST"
+                      action="order_view.php?id=<?= (int) $order["id"] ?>"
+                      style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
+                    <input type="hidden" name="csrf_token"
+                           value="<?= e($_SESSION["csrf_token"]) ?>">
+                    <input type="hidden" name="order_id"
+                           value="<?= (int) $order["id"] ?>">
+                    <input type="hidden" name="action" value="set_eta">
+
+                    <label for="estimated_delivery">Expected delivery date</label>
+                    <input type="date" id="estimated_delivery" name="estimated_delivery"
+                           min="<?= e(date("Y-m-d")) ?>"
+                           value="<?= !empty($delivery["estimated_delivery"]) ? e(substr($delivery["estimated_delivery"], 0, 10)) : "" ?>"
+                           required>
+
+                    <button type="submit" class="secondary-button">Save date</button>
+                </form>
+            <?php elseif ($order["status"] === "pending"): ?>
+                <p><small>Confirm the order to schedule its delivery.</small></p>
+            <?php endif; ?>
 
             <h3>Items</h3>
             <div class="table-wrapper">

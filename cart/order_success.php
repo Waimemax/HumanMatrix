@@ -164,6 +164,10 @@ try {
             <p>Payment status: <?= e(ucfirst($order["payment_status"])) ?></p>
 
             <p style="margin-top:24px;">
+                <a href="../customer/order.php?id=<?= (int) $order["id"] ?>"><strong>Track this order</strong></a>
+                &middot;
+                <a href="../customer/orders.php">My orders</a>
+                &middot;
                 <a href="../customer/product.php">Continue shopping</a>
             </p>
         <?php endif; ?>
