@@ -1,4 +1,3 @@
-
 <?php
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
@@ -25,8 +24,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
             Products
         </a>
 
+        <a href="/HumanMatrix/admin/facilities.php"
+           class="<?= $current_page === 'facilities.php' ? 'active' : '' ?>">
+            Facilities
+        </a>
+
         <a href="/HumanMatrix/admin/orders.php"
-           class="<?= $current_page === 'orders.php' ? 'active' : '' ?>">
+           class="<?= in_array($current_page, ['orders.php', 'order_view.php'], true) ? 'active' : '' ?>">
             Orders
         </a>
 

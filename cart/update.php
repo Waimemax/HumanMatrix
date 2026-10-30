@@ -34,6 +34,13 @@ if (
 }
 
 $action = $_POST["action"] ?? "";
+
+// Clear the whole cart. This needs no product id.
+if ($action === "clear") {
+    $_SESSION["cart"] = [];
+    backToCart("Your cart has been cleared.", "success");
+}
+
 $productId = filter_input(INPUT_POST, "product_id", FILTER_VALIDATE_INT);
 
 if ($productId === false || $productId === null || $productId < 1) {
@@ -52,12 +59,6 @@ if (
 if ($action === "remove") {
     unset($_SESSION["cart"][$productId]);
     backToCart("Item removed from your cart.", "success");
-}
-
-// Clear the whole cart.
-if ($action === "clear") {
-    $_SESSION["cart"] = [];
-    backToCart("Your cart has been cleared.", "success");
 }
 
 // Update an item's quantity.

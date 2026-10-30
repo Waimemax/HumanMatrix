@@ -13,6 +13,11 @@ function e($value)
     return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
 }
 
+function statusLabel(string $status): string
+{
+    return ucfirst(str_replace("_", " ", $status));
+}
+
 $orderId = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if ($orderId === false || $orderId === null || $orderId < 1) {
@@ -28,6 +33,7 @@ try {
     // Only the customer who placed the order may view it.
     $stmt = $pdo->prepare("
         SELECT id, facility_name, contact_phone, delivery_address, notes,
+               payment_method, payment_status,
                total_amount, status, created_at
         FROM orders
         WHERE id = :id AND user_id = :user_id
@@ -98,7 +104,7 @@ try {
                     <p>
                         Order reference:
                         <strong>HM-<?= str_pad((string) $order["id"], 6, "0", STR_PAD_LEFT) ?></strong>
-                        &middot; Status: <?= e(ucfirst($order["status"])) ?>
+                        &middot; Status: <?= e(statusLabel($order["status"])) ?>
                     </p>
                 </div>
             </div>
@@ -140,6 +146,22 @@ try {
             <?php if (!empty($order["notes"])): ?>
                 <p><strong>Notes:</strong> <?= nl2br(e($order["notes"])) ?></p>
             <?php endif; ?>
+
+            <h3>Payment</h3>
+            <?php if ($order["payment_method"] === "before_delivery"): ?>
+                <p>
+                    <strong>Pay before delivery.</strong>
+                    HumanMatrix will contact you on
+                    <?= e($order["contact_phone"]) ?> with payment details.
+                    Your order will be dispatched once payment is confirmed.
+                </p>
+            <?php else: ?>
+                <p>
+                    <strong>Pay upon delivery.</strong>
+                    Please pay when the equipment is delivered to your facility.
+                </p>
+            <?php endif; ?>
+            <p>Payment status: <?= e(ucfirst($order["payment_status"])) ?></p>
 
             <p style="margin-top:24px;">
                 <a href="../customer/product.php">Continue shopping</a>

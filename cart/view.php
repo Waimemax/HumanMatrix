@@ -39,7 +39,10 @@ if (is_array($cart) && !empty($cart)) {
         ");
         $stmt->execute($ids);
 
+        $validIds = [];
+
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $validIds[] = (int) $row["id"];
             $qty = (int) $cart[$row["id"]];
             $subtotal = (float) $row["price"] * $qty;
             $total += $subtotal;
@@ -52,6 +55,20 @@ if (is_array($cart) && !empty($cart)) {
                 "stock"    => (int) $row["stock_quantity"],
                 "subtotal" => $subtotal,
             ];
+        }
+        // Drop cart entries whose product is inactive or deleted, so they
+        // can never get stuck in the session.
+        $removedCount = 0;
+
+        foreach (array_keys($_SESSION["cart"]) as $cartId) {
+            if (!in_array((int) $cartId, $validIds, true)) {
+                unset($_SESSION["cart"][$cartId]);
+                $removedCount++;
+            }
+        }
+
+        if ($removedCount > 0 && $cartMessage === "") {
+            $cartMessage = "Some items were removed because they are no longer available.";
         }
     } catch (PDOException $exception) {
         error_log("HumanMatrix cart view error: " . $exception->getMessage());
@@ -173,9 +190,12 @@ if (is_array($cart) && !empty($cart)) {
                   onsubmit="return confirm('Remove all items from your cart?');">
                 <input type="hidden" name="csrf_token" value="<?= e($_SESSION["csrf_token"]) ?>">
                 <input type="hidden" name="action" value="clear">
-                <input type="hidden" name="product_id" value="<?= $items[0]["id"] ?>">
                 <button type="submit">Clear cart</button>
             </form>
+
+            <p style="margin-top:16px;">
+                <a href="checkout.php"><strong>Proceed to checkout</strong></a>
+            </p>
         <?php endif; ?>
     </section>
 </main>

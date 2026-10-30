@@ -42,21 +42,26 @@ if (!is_array($cart) || empty($cart)) {
     redirectWith("view.php", "cart_message", "Your cart is empty.");
 }
 
-// Read and validate the delivery details.
-$facilityName    = trim((string) ($_POST["facility_name"] ?? ""));
+// Read the submitted details.
+$facilityId      = filter_input(INPUT_POST, "facility_id", FILTER_VALIDATE_INT);
 $contactPhone    = trim((string) ($_POST["contact_phone"] ?? ""));
 $deliveryAddress = trim((string) ($_POST["delivery_address"] ?? ""));
 $notes           = trim((string) ($_POST["notes"] ?? ""));
+$paymentMethod   = $_POST["payment_method"] ?? "";
 
+// Keep the entered values so the form can be re-filled after an error.
 $_SESSION["checkout_old"] = [
-    "facility_name"    => $facilityName,
+    "facility_id"      => ($facilityId === false || $facilityId === null) ? 0 : $facilityId,
     "contact_phone"    => $contactPhone,
     "delivery_address" => $deliveryAddress,
     "notes"            => $notes,
+    "payment_method"   => is_string($paymentMethod) ? $paymentMethod : "",
 ];
 
-if ($facilityName === "" || mb_strlen($facilityName) > 150) {
-    redirectWith("checkout.php", "checkout_error", "Please enter a facility name (up to 150 characters).");
+$facilitySearch = trim((string) ($_POST["facility_search"] ?? ""));
+
+if (($facilityId === false || $facilityId === null || $facilityId < 1) && $facilitySearch === "") {
+    redirectWith("checkout.php", "checkout_error", "Please select your facility.");
 }
 
 if (!preg_match('/^[0-9+()\-\s]{7,20}$/', $contactPhone)) {
@@ -71,9 +76,44 @@ if (mb_strlen($notes) > 500) {
     redirectWith("checkout.php", "checkout_error", "Notes must be 500 characters or fewer.");
 }
 
+if (!is_string($paymentMethod) || !in_array($paymentMethod, ["before_delivery", "on_delivery"], true)) {
+    redirectWith("checkout.php", "checkout_error", "Please choose when you will pay.");
+}
+
 require_once "../config/database.php";
 
 try {
+    // The facility must exist and be active. The name is read from the
+    // database, never trusted from the browser.
+    $facility = false;
+
+    if ($facilityId !== false && $facilityId !== null && $facilityId >= 1) {
+        $facilityStmt = $pdo->prepare("
+            SELECT id, name
+            FROM facilities
+            WHERE id = :id AND status = 'active'
+            LIMIT 1
+        ");
+        $facilityStmt->execute([":id" => $facilityId]);
+        $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Fall back to an exact name match if the id did not arrive.
+    if (!$facility && $facilitySearch !== "") {
+        $facilityStmt = $pdo->prepare("
+            SELECT id, name
+            FROM facilities
+            WHERE name = :name AND status = 'active'
+            LIMIT 1
+        ");
+        $facilityStmt->execute([":name" => $facilitySearch]);
+        $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    if (!$facility) {
+        redirectWith("checkout.php", "checkout_error", "The selected facility is not available. Please choose another.");
+    }
+
     $pdo->beginTransaction();
 
     // Lock products in a consistent order to avoid deadlocks.
@@ -123,24 +163,38 @@ try {
         ];
     }
 
-    // Create the order.
+    // Create the order. Payment always starts as unpaid; an administrator
+    // confirms payment because payments are handled outside the system.
     $orderStmt = $pdo->prepare("
         INSERT INTO orders
-            (user_id, facility_name, contact_phone, delivery_address, notes, total_amount, status)
+            (user_id, order_number, facility_id, facility_name, contact_phone, delivery_address,
+             notes, payment_method, payment_status, total_amount, status)
         VALUES
-            (:user_id, :facility_name, :contact_phone, :delivery_address, :notes, :total_amount, 'pending')
+            (:user_id, :order_number, :facility_id, :facility_name, :contact_phone, :delivery_address,
+             :notes, :payment_method, 'unpaid', :total_amount, 'pending')
     ");
 
     $orderStmt->execute([
         ":user_id"          => (int) $_SESSION["user_id"],
-        ":facility_name"    => $facilityName,
+        ":order_number"     => "TMP-" . bin2hex(random_bytes(10)),
+        ":facility_id"      => (int) $facility["id"],
+        ":facility_name"    => $facility["name"],
         ":contact_phone"    => $contactPhone,
         ":delivery_address" => $deliveryAddress,
         ":notes"            => $notes !== "" ? $notes : null,
+        ":payment_method"   => $paymentMethod,
         ":total_amount"     => $total,
     ]);
 
     $orderId = (int) $pdo->lastInsertId();
+
+    // The orders table requires a unique order number. Replace the temporary
+    // value with the readable reference, e.g. HM-000012.
+    $numberStmt = $pdo->prepare("UPDATE orders SET order_number = :number WHERE id = :id");
+    $numberStmt->execute([
+        ":number" => "HM-" . str_pad((string) $orderId, 6, "0", STR_PAD_LEFT),
+        ":id"     => $orderId,
+    ]);
 
     // Save each line and reduce stock.
     $itemStmt = $pdo->prepare("
