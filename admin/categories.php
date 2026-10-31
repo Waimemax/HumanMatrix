@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -14,11 +13,31 @@ if ($_SESSION["role"] !== "admin") {
 
 require_once "../config/database.php";
 
+if (empty($_SESSION["csrf_token"])) {
+    $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
+}
+
 $message = "";
 $message_type = "success";
 
+// Every POST (add or delete) must carry the session's security token.
+$csrfValid = true;
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $submittedToken = $_POST["csrf_token"] ?? "";
+
+    if (
+        !is_string($submittedToken) ||
+        !hash_equals($_SESSION["csrf_token"], $submittedToken)
+    ) {
+        $csrfValid = false;
+        $message = "Invalid form submission. Please refresh the page and try again.";
+        $message_type = "error";
+    }
+}
+
 // Delete a category
-if ($_SERVER["REQUEST_METHOD"] === "POST"
+if ($csrfValid && $_SERVER["REQUEST_METHOD"] === "POST"
     && isset($_POST["delete_category_id"])) {
 
     $category_id = filter_var(
@@ -62,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST"
 }
 
 // Add a new category
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($csrfValid && $_SERVER["REQUEST_METHOD"] === "POST") {
     $name = trim($_POST["name"] ?? "");
     $description = trim($_POST["description"] ?? "");
 
@@ -229,6 +248,7 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Add New Category</h2>
 
             <form method="POST" action="categories.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION["csrf_token"]) ?>">
                 <label for="name">Category Name</label>
                 <input
                     type="text"
@@ -286,6 +306,7 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     action="categories.php"
                                     onsubmit="return confirm('Are you sure you want to delete this category?');">
 
+                           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION["csrf_token"]) ?>">
                            <input
                            type="hidden"
                            name="delete_category_id"

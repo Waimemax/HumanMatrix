@@ -1,5 +1,12 @@
 <?php
 $current_page = basename($_SERVER['PHP_SELF']);
+
+$adminUnread = 0;
+
+if (isset($pdo) && $pdo instanceof PDO && isset($_SESSION["user_id"])) {
+    require_once __DIR__ . "/notifications.php";
+    $adminUnread = unreadNotificationCount($pdo, (int) $_SESSION["user_id"]);
+}
 ?>
 
 <aside class="admin-sidebar">
@@ -47,6 +54,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <a href="/HumanMatrix/admin/reports.php"
            class="<?= $current_page === 'reports.php' ? 'active' : '' ?>">
             Reports
+        </a>
+
+        <a href="/HumanMatrix/admin/notifications.php"
+           class="<?= $current_page === 'notifications.php' ? 'active' : '' ?>">
+            Notifications<?= $adminUnread > 0 ? ' (' . $adminUnread . ')' : '' ?>
         </a>
 
         <a href="/HumanMatrix/auth/logout.php">

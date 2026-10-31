@@ -16,6 +16,12 @@ $cartMessage = $_SESSION["cart_message"] ?? "";
 unset($_SESSION["cart_message"], $_SESSION["cart_message_type"]);
 
 require_once "../config/database.php";
+require_once "../includes/notifications.php";
+
+$unreadCount = unreadNotificationCount($pdo, (int) ($_SESSION["user_id"] ?? 0));
+$cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
+    ? count($_SESSION["cart"])
+    : 0;
 
 function e($value)
 {
@@ -94,7 +100,9 @@ if (is_array($cart) && !empty($cart)) {
     <nav class="catalogue-nav">
         <a href="../customer/dashboard.php">Dashboard</a>
         <a href="../customer/product.php">Equipment</a>
-        <a class="active" href="view.php">Cart</a>
+        <a class="active" href="view.php">Cart<?= $cartCount > 0 ? " (" . $cartCount . ")" : "" ?></a>
+        <a href="../customer/orders.php">My Orders</a>
+        <a href="../customer/notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
         <a href="../auth/logout.php">Logout</a>
     </nav>
 </header>

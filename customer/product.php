@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -19,6 +18,12 @@ $cartMessageType = $_SESSION["cart_message_type"] ?? "success";
 unset($_SESSION["cart_message"], $_SESSION["cart_message_type"]);
 
 require_once "../config/database.php";
+require_once "../includes/notifications.php";
+
+$unreadCount = unreadNotificationCount($pdo, (int) ($_SESSION["user_id"] ?? 0));
+$cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
+    ? count($_SESSION["cart"])
+    : 0;
 
 function e($value)
 {
@@ -128,9 +133,11 @@ try {
 
     <nav class="catalogue-nav">
         <a href="dashboard.php">Dashboard</a>
-        <a class="active" href="products.php">Equipment</a>
+        <a class="active" href="product.php">Equipment</a>
+        <a href="../cart/view.php">Cart<?= $cartCount > 0 ? " (" . $cartCount . ")" : "" ?></a>
+        <a href="orders.php">My Orders</a>
+        <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
         <a href="../auth/logout.php">Logout</a>
-           <a href="../cart/view.php">Cart</a>
     </nav>
 </header>
 
@@ -296,7 +303,10 @@ try {
                                 <?= e($product["category_name"]) ?>
                             </p>
 
-                            <h3><?= e($product["name"]) ?></h3>
+                            <h3>
+                                <a href="product_details.php?id=<?= (int) $product["id"] ?>"
+                                   style="color:inherit; text-decoration:none;"><?= e($product["name"]) ?></a>
+                            </h3>
 
                             <p class="catalogue-description">
                                 <?php
@@ -308,6 +318,10 @@ try {
                                     ? e($description)
                                     : "Contact HumanMatrix for more information about this product.";
                                 ?>
+                            </p>
+
+                            <p style="margin:0 0 10px;">
+                                <a href="product_details.php?id=<?= (int) $product["id"] ?>">View details &amp; specifications</a>
                             </p>
 
                             <div class="catalogue-card-footer">

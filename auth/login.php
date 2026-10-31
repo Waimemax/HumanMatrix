@@ -6,10 +6,77 @@ require_once "../config/database.php";
 
 $message = "";
 
+// Login attempt limiting: after too many failed sign-ins for the same email
+// (or from the same address) sign-in is paused for a while. Failures are
+// kept in the existing activity_logs table.
+const LOGIN_MAX_PER_EMAIL = 5;
+const LOGIN_MAX_PER_IP = 20;
+const LOGIN_WINDOW_SECONDS = 900; // 15 minutes
+
+function loginFailureCount(PDO $pdo, string $column, string $value): int
+{
+    $sql = $column === "ip"
+        ? "SELECT COUNT(*) FROM activity_logs
+           WHERE action = 'login_failed' AND ip_address = :v AND created_at >= :since"
+        : "SELECT COUNT(*) FROM activity_logs
+           WHERE action = 'login_failed' AND description = :v AND created_at >= :since";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ":v"     => $value,
+        ":since" => date("Y-m-d H:i:s", time() - LOGIN_WINDOW_SECONDS),
+    ]);
+
+    return (int) $stmt->fetchColumn();
+}
+
+function isLoginBlocked(PDO $pdo, string $email, string $ip): bool
+{
+    try {
+        return loginFailureCount($pdo, "email", $email) >= LOGIN_MAX_PER_EMAIL
+            || loginFailureCount($pdo, "ip", $ip) >= LOGIN_MAX_PER_IP;
+    } catch (PDOException $exception) {
+        // If the log cannot be read, do not lock everybody out.
+        error_log("HumanMatrix login throttle read error: " . $exception->getMessage());
+        return false;
+    }
+}
+
+function recordLoginFailure(PDO $pdo, string $email, string $ip): void
+{
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO activity_logs (user_id, action, description, ip_address, created_at)
+            VALUES (NULL, 'login_failed', :email, :ip, :now)
+        ");
+        $stmt->execute([
+            ":email" => $email,
+            ":ip"    => $ip,
+            ":now"   => date("Y-m-d H:i:s"),
+        ]);
+    } catch (PDOException $exception) {
+        error_log("HumanMatrix login throttle write error: " . $exception->getMessage());
+    }
+}
+
+function clearLoginFailures(PDO $pdo, string $email): void
+{
+    try {
+        $stmt = $pdo->prepare(
+            "DELETE FROM activity_logs WHERE action = 'login_failed' AND description = :email"
+        );
+        $stmt->execute([":email" => $email]);
+    } catch (PDOException $exception) {
+        error_log("HumanMatrix login throttle clear error: " . $exception->getMessage());
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $email = trim($_POST["email"]);
-    $password = $_POST["password"];
+    $email = trim((string) ($_POST["email"] ?? ""));
+    $password = (string) ($_POST["password"] ?? "");
+    $emailKey = mb_substr(strtolower($email), 0, 150);
+    $ip = mb_substr((string) ($_SERVER["REMOTE_ADDR"] ?? "unknown"), 0, 45);
 
     if (empty($email) || empty($password)) {
 
@@ -18,6 +85,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
         $message = "Please enter a valid email address.";
+
+    } elseif (isLoginBlocked($pdo, $emailKey, $ip)) {
+
+        $message = "Too many failed sign-in attempts. Please wait 15 minutes and try again.";
 
     } else {
 
@@ -33,6 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (!$user) {
 
+            recordLoginFailure($pdo, $emailKey, $ip);
             $message = "Invalid email or password.";
 
         } elseif ($user["status"] !== "active") {
@@ -41,10 +113,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } elseif (!password_verify($password, $user["password"])) {
 
+            recordLoginFailure($pdo, $emailKey, $ip);
             $message = "Invalid email or password.";
 
         } else {
 
+            clearLoginFailures($pdo, $emailKey);
             session_regenerate_id(true);
 
             $_SESSION["user_id"] = $user["id"];

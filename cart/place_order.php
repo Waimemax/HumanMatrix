@@ -84,6 +84,19 @@ require_once "../config/database.php";
 require_once "../includes/notifications.php";
 
 try {
+    // A customer who was deactivated while logged in cannot place new orders.
+    $accountStmt = $pdo->prepare("SELECT status FROM users WHERE id = :id LIMIT 1");
+    $accountStmt->execute([":id" => (int) $_SESSION["user_id"]]);
+    $accountStatus = $accountStmt->fetchColumn();
+
+    if ($accountStatus !== "active") {
+        redirectWith(
+            "checkout.php",
+            "checkout_error",
+            "Your account is inactive. Please contact the administrator."
+        );
+    }
+
     // The facility must exist and be active. The name is read from the
     // database, never trusted from the browser.
     $facility = false;
@@ -243,6 +256,16 @@ try {
         "Order placed",
         "Your order " . orderReference($orderId) . " has been placed. "
         . "HumanMatrix will confirm it shortly."
+    );
+
+    // Tell the administrators there is a new order to confirm.
+    notifyAdmins(
+        $pdo,
+        "New order received",
+        "Order " . orderReference($orderId) . " from " . $facility["name"]
+        . " (KES " . number_format($total, 2) . ", "
+        . ($paymentMethod === "before_delivery" ? "pay before delivery" : "pay on delivery")
+        . ") is waiting to be confirmed."
     );
 
     // Order placed: clear the cart and the saved form values.

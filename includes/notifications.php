@@ -35,6 +35,27 @@ function createNotification(
     }
 }
 
+// Send the same notification to every active administrator.
+function notifyAdmins(
+    PDO $pdo,
+    string $title,
+    string $message,
+    string $type = "order"
+): void {
+    try {
+        $admins = $pdo->query(
+            "SELECT id FROM users WHERE role = 'admin' AND status = 'active'"
+        )->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $exception) {
+        error_log("HumanMatrix admin lookup error: " . $exception->getMessage());
+        return;
+    }
+
+    foreach ($admins as $adminId) {
+        createNotification($pdo, (int) $adminId, $title, $message, $type);
+    }
+}
+
 function unreadNotificationCount(PDO $pdo, int $userId): int
 {
     try {
