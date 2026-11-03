@@ -49,3 +49,6 @@ node_modules/
 
 # Test/cache files
 .cache/
+
+# Email configuration and credentials
+/config/mail.php

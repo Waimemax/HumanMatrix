@@ -249,13 +249,42 @@ try {
 
     $pdo->commit();
 
-    // Tell the customer their order was received. This never blocks the order.
+    // Build the order summary shown in the confirmation email.
+    $summaryRows = "";
+
+    foreach ($lines as $line) {
+        $summaryRows .= '<tr>'
+            . '<td style="padding:6px 8px;border-bottom:1px solid #e5eaf0;">' . mailEscape($line["name"]) . '</td>'
+            . '<td style="padding:6px 8px;border-bottom:1px solid #e5eaf0;text-align:center;">' . (int) $line["quantity"] . '</td>'
+            . '<td style="padding:6px 8px;border-bottom:1px solid #e5eaf0;text-align:right;">KES ' . number_format($line["subtotal"], 2) . '</td>'
+            . '</tr>';
+    }
+
+    $paymentText = $paymentMethod === "before_delivery"
+        ? "You chose to pay before delivery. Your order will be dispatched once Human Matrix has confirmed your payment."
+        : "You chose to pay on delivery.";
+
+    $summaryHtml = '<table style="width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 12px;">'
+        . '<tr style="background:#f4f7fb;"><th style="padding:6px 8px;text-align:left;">Item</th>'
+        . '<th style="padding:6px 8px;">Qty</th><th style="padding:6px 8px;text-align:right;">Amount</th></tr>'
+        . $summaryRows
+        . '<tr><td colspan="2" style="padding:8px;text-align:right;"><strong>Total</strong></td>'
+        . '<td style="padding:8px;text-align:right;"><strong>KES ' . number_format($total, 2) . '</strong></td></tr>'
+        . '</table>'
+        . '<p style="margin:0 0 6px;"><strong>Facility:</strong> ' . mailEscape($facility["name"]) . '</p>'
+        . '<p style="margin:0 0 6px;"><strong>Delivery address:</strong> ' . mailEscape($deliveryAddress) . '</p>'
+        . '<p style="margin:0;">' . mailEscape($paymentText) . '</p>';
+
+    // Tell the customer their order was received (in the app and by email).
+    // This never blocks the order.
     createNotification(
         $pdo,
         (int) $_SESSION["user_id"],
         "Order placed",
         "Your order " . orderReference($orderId) . " has been placed. "
-        . "HumanMatrix will confirm it shortly."
+        . "HumanMatrix will confirm it shortly.",
+        "order",
+        $summaryHtml
     );
 
     // Tell the administrators there is a new order to confirm.

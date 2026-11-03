@@ -7,6 +7,8 @@
 // order flow carries on, because an order must never fail just because a
 // message could not be saved.
 
+require_once __DIR__ . "/mailer.php";
+
 function orderReference(int $orderId): string
 {
     return "HM-" . str_pad((string) $orderId, 6, "0", STR_PAD_LEFT);
@@ -17,7 +19,8 @@ function createNotification(
     int $userId,
     string $title,
     string $message,
-    string $type = "order"
+    string $type = "order",
+    ?string $emailExtraHtml = null
 ): void {
     try {
         $stmt = $pdo->prepare("
@@ -32,7 +35,11 @@ function createNotification(
         ]);
     } catch (PDOException $exception) {
         error_log("HumanMatrix notification error: " . $exception->getMessage());
+        return;
     }
+
+    // Also send the message by email (does nothing if email is switched off).
+    emailUserAboutNotification($pdo, $userId, $title, $message, $emailExtraHtml);
 }
 
 // Send the same notification to every active administrator.
