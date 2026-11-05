@@ -61,6 +61,11 @@ if (isset($pdo) && $pdo instanceof PDO && isset($_SESSION["user_id"])) {
             Notifications<?= $adminUnread > 0 ? ' (' . $adminUnread . ')' : '' ?>
         </a>
 
+        <a href="/HumanMatrix/admin/profile.php"
+           class="<?= $current_page === 'profile.php' ? 'active' : '' ?>">
+            My Profile
+        </a>
+
         <a href="/HumanMatrix/auth/logout.php">
             Logout
         </a>

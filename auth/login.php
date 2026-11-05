@@ -6,6 +6,10 @@ require_once "../config/database.php";
 
 $message = "";
 
+if (isset($_GET["reset"])) {
+    $message = "Your password has been changed. Please sign in with your new password.";
+}
+
 // Login attempt limiting: after too many failed sign-ins for the same email
 // (or from the same address) sign-in is paused for a while. Failures are
 // kept in the existing activity_logs table.
@@ -251,6 +255,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     </button>
 
                 </form>
+
+                <p class="auth-switch">
+                    <a href="forgot_password.php">Forgot your password?</a>
+                </p>
 
                 <p class="auth-switch">
                     Don't have an account?

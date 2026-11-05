@@ -132,6 +132,7 @@ try {
         <a href="../cart/view.php">Cart<?= $cartCount > 0 ? " (" . $cartCount . ")" : "" ?></a>
         <a class="active" href="orders.php">My Orders</a>
         <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
+        <a href="profile.php">Profile</a>
         <a href="../auth/logout.php">Logout</a>
     </nav>
 </header>

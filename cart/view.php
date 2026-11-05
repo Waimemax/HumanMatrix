@@ -103,6 +103,7 @@ if (is_array($cart) && !empty($cart)) {
         <a class="active" href="view.php">Cart<?= $cartCount > 0 ? " (" . $cartCount . ")" : "" ?></a>
         <a href="../customer/orders.php">My Orders</a>
         <a href="../customer/notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
+        <a href="../customer/profile.php">Profile</a>
         <a href="../auth/logout.php">Logout</a>
     </nav>
 </header>

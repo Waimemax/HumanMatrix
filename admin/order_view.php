@@ -400,7 +400,11 @@ if (
 
         <header class="admin-header">
             <h1>Order Details</h1>
-            <p><a href="orders.php">&larr; Back to all orders</a></p>
+            <p>
+                <a href="orders.php">&larr; Back to all orders</a>
+                &middot;
+                <a href="invoice.php?id=<?= (int) $orderId ?>" target="_blank">Print invoice / delivery note</a>
+            </p>
         </header>
 
         <?php if (isset($_GET["updated"])): ?>

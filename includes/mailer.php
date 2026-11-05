@@ -48,14 +48,18 @@ function mailEscape($value): string
 }
 
 // Wraps a message in a simple, readable email layout.
-function emailLayout(string $heading, string $bodyHtml, bool $forAdmin = false): string
+function emailLayout(string $heading, string $bodyHtml, bool $forAdmin = false, ?array $customButton = null): string
 {
     $config = mailConfig();
     $siteUrl = rtrim((string) ($config["site_url"] ?? ""), "/");
 
     $button = "";
 
-    if ($siteUrl !== "") {
+    if ($customButton !== null) {
+        $button = '<p style="margin:24px 0 0;"><a href="' . mailEscape($customButton[1])
+            . '" style="background:#2476a8;color:#ffffff;padding:10px 18px;border-radius:6px;'
+            . 'text-decoration:none;display:inline-block;">' . mailEscape($customButton[0]) . '</a></p>';
+    } elseif ($siteUrl !== "") {
         $link = $forAdmin ? "/admin/notifications.php" : "/customer/orders.php";
         $label = $forAdmin ? "Open notifications" : "View my orders";
 

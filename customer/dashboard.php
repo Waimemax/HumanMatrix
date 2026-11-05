@@ -163,7 +163,7 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
             <a href="../cart/view.php">Cart<?= $cartLines > 0 ? " (" . $cartLines . ")" : "" ?></a>
             <a href="orders.php">My Orders</a>
             <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
-            <a href="#my-account">My Account</a>
+            <a href="profile.php">My Account</a>
             <a href="../auth/logout.php" class="dashboard-logout">
                 <span aria-hidden="true">↪</span> Logout
             </a>
@@ -295,6 +295,9 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
 
                     <a href="#account-details" class="dashboard-card-link">
                         View details <span aria-hidden="true">↓</span>
+                    </a>
+                    <a href="profile.php" class="dashboard-card-link">
+                        Edit profile &amp; password <span aria-hidden="true">→</span>
                     </a>
                 </div>
 
