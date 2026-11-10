@@ -23,6 +23,8 @@ config/database.local.php
 database/backups/
 backups/
 
+# Payment credentials
+/config/mpesa.php
 # Logs
 *.log
 logs/
@@ -52,3 +54,10 @@ node_modules/
 
 # Email configuration and credentials
 /config/mail.php
+
+# PHP error logs
+error_log
+
+# Runtime and cache files
+/storage/
+/cache/

@@ -70,6 +70,28 @@ try {
         );
     }
 
+    // An M-Pesa request that is still waiting for the customer's PIN would
+    // take money for an order that no longer exists, so ask them to wait.
+    try {
+        $waiting = $pdo->prepare("
+            SELECT COUNT(*) FROM mpesa_payments
+            WHERE order_id = :id AND status = 'pending' AND created_at >= :since
+        ");
+        $waiting->execute([":id" => $orderId, ":since" => date("Y-m-d H:i:s", time() - 300)]);
+
+        if ((int) $waiting->fetchColumn() > 0) {
+            throw new RuntimeException(
+                "An M-Pesa payment for this order is still in progress. "
+                . "Please wait a few minutes for it to finish, then try again."
+            );
+        }
+    } catch (PDOException $exception) {
+        // The M-Pesa table has not been created: nothing to check.
+        if ($pdo->inTransaction() && $exception->getCode() !== "42S02") {
+            error_log("HumanMatrix cancel M-Pesa check error: " . $exception->getMessage());
+        }
+    }
+
     $update = $pdo->prepare("UPDATE orders SET status = 'cancelled' WHERE id = :id AND status = 'pending'");
     $update->execute([":id" => $orderId]);
 

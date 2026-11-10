@@ -7,6 +7,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 require_once "../config/database.php";
+require_once "../includes/mpesa_helper.php";
 require_once "../includes/notifications.php";
 
 $unreadCount = unreadNotificationCount($pdo, (int) ($_SESSION["user_id"] ?? 0));
@@ -171,6 +172,15 @@ try {
                 </p>
             <?php endif; ?>
             <p>Payment status: <?= e(ucfirst($order["payment_status"])) ?></p>
+
+            <?php if (mpesaEnabled() && mpesaOrderPayable($order)): ?>
+                <p>
+                    <a href="../customer/pay_mpesa.php?order_id=<?= (int) $order["id"] ?>"
+                       style="display:inline-block; background:#15803d; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none; font-weight:bold;">
+                        Pay KSh <?= number_format(mpesaAmountFor($order), 2) ?> with M-Pesa now
+                    </a>
+                </p>
+            <?php endif; ?>
 
             <p style="margin-top:24px;">
                 <a href="../customer/order.php?id=<?= (int) $order["id"] ?>"><strong>Track this order</strong></a>

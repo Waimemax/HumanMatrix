@@ -332,6 +332,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $order = null;
 $items = [];
 $delivery = null;
+$mpesaPayments = [];
 
 try {
     $stmt = $pdo->prepare("
@@ -363,6 +364,21 @@ try {
         ");
         $deliveryStmt->execute([":order_id" => $orderId]);
         $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        // M-Pesa attempts for this order. The page still works if the
+        // mpesa_payments table has not been created yet.
+        try {
+            $mpesaStmt = $pdo->prepare("
+                SELECT phone, amount, status, mpesa_receipt, result_desc, created_at
+                FROM mpesa_payments
+                WHERE order_id = :order_id
+                ORDER BY id DESC
+            ");
+            $mpesaStmt->execute([":order_id" => $orderId]);
+            $mpesaPayments = $mpesaStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $mpesaException) {
+            $mpesaPayments = [];
+        }
     }
 } catch (PDOException $exception) {
     error_log("Admin order view error: " . $exception->getMessage());
@@ -461,6 +477,39 @@ if (
                 <?php endif; ?>
             </p>
 
+            <?php if (!empty($mpesaPayments)): ?>
+                <h4>M-Pesa payments</h4>
+                <div class="table-wrapper">
+                    <table class="product-table">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Phone</th>
+                                <th>Amount</th>
+                                <th>Result</th>
+                                <th>Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($mpesaPayments as $mp): ?>
+                                <tr>
+                                    <td><?= e(date("d M Y, H:i", strtotime($mp["created_at"]))) ?></td>
+                                    <td><?= e($mp["phone"]) ?></td>
+                                    <td>KES <?= number_format((float) $mp["amount"], 2) ?></td>
+                                    <td>
+                                        <?= e(ucfirst($mp["status"])) ?>
+                                        <?php if ($mp["status"] === "failed" && !empty($mp["result_desc"])): ?>
+                                            <br><small><?= e($mp["result_desc"]) ?></small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= e($mp["mpesa_receipt"] ?? "") ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
             <h3>Delivery</h3>
             <p>
                 <?php if (!empty($delivery["estimated_delivery"])): ?>
@@ -538,7 +587,8 @@ if (
         <section class="product-form-section">
             <h2>Confirm payment</h2>
             <p>
-                Payments are made outside the system. Once you have received
+                M-Pesa payments are confirmed automatically. For any other payment
+                (cash, bank transfer), once you have received
                 KES <?= number_format((float) $order["total_amount"], 2) ?>
                 from this facility, record it here.
             </p>

@@ -8,6 +8,7 @@ if (!isset($_SESSION["user_id"])) {
 
 require_once "../config/database.php";
 require_once "../includes/notifications.php";
+require_once "../includes/mpesa_helper.php";
 
 if (empty($_SESSION["csrf_token"])) {
     $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
@@ -60,6 +61,7 @@ $cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
 $unreadCount = unreadNotificationCount($pdo, (int) $_SESSION["user_id"]);
 
 $order = null;
+$mpesaReceipt = "";
 $items = [];
 $delivery = null;
 $error = false;
@@ -100,6 +102,20 @@ try {
         ");
         $deliveryStmt->execute([":order_id" => $orderId]);
         $delivery = $deliveryStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        // M-Pesa receipt, if this order was paid that way. The page still works
+        // if the mpesa_payments table has not been created yet.
+        try {
+            $receiptStmt = $pdo->prepare("
+                SELECT mpesa_receipt FROM mpesa_payments
+                WHERE order_id = :order_id AND status = 'success'
+                ORDER BY id DESC LIMIT 1
+            ");
+            $receiptStmt->execute([":order_id" => $orderId]);
+            $mpesaReceipt = $receiptStmt->fetchColumn() ?: "";
+        } catch (PDOException $mpesaException) {
+            $mpesaReceipt = "";
+        }
     }
 } catch (PDOException $exception) {
     error_log("HumanMatrix customer order view error: " . $exception->getMessage());
@@ -252,11 +268,22 @@ $currentIndex = $order ? array_search($order["status"], $stepKeys, true) : false
                 <?php if ($order["payment_status"] === "paid" && !empty($order["paid_at"])): ?>
                     <br><small>Confirmed on
                         <?= e(date("d M Y", strtotime($order["paid_at"]))) ?></small>
+                    <?php if ($mpesaReceipt !== ""): ?>
+                        <br><small>M-Pesa receipt: <strong><?= e($mpesaReceipt) ?></strong></small>
+                    <?php endif; ?>
                 <?php elseif ($order["payment_method"] === "before_delivery" && $order["status"] !== "cancelled"): ?>
-                    <br><small>HumanMatrix will contact you with payment details.
-                    Your order is dispatched once payment is confirmed.</small>
+                    <br><small>Your order is dispatched once payment is confirmed.</small>
                 <?php endif; ?>
             </p>
+
+            <?php if (mpesaEnabled() && mpesaOrderPayable($order)): ?>
+                <p>
+                    <a href="pay_mpesa.php?order_id=<?= (int) $order["id"] ?>"
+                       style="display:inline-block; background:#15803d; color:#fff; padding:10px 18px; border-radius:6px; text-decoration:none; font-weight:bold;">
+                        Pay KSh <?= number_format(mpesaAmountFor($order), 2) ?> with M-Pesa
+                    </a>
+                </p>
+            <?php endif; ?>
 
             <h3>Items</h3>
             <div style="overflow-x:auto;">

@@ -51,6 +51,23 @@ function loadInvoiceData(PDO $pdo, int $orderId, ?int $userId): ?array
     ");
     $deliveryStmt->execute([":order_id" => $orderId]);
 
+    // M-Pesa receipt, if the order was paid that way (optional table).
+    $receipt = "";
+
+    try {
+        $receiptStmt = $pdo->prepare("
+            SELECT mpesa_receipt FROM mpesa_payments
+            WHERE order_id = :order_id AND status = 'success'
+            ORDER BY id DESC LIMIT 1
+        ");
+        $receiptStmt->execute([":order_id" => $orderId]);
+        $receipt = (string) ($receiptStmt->fetchColumn() ?: "");
+    } catch (PDOException $exception) {
+        $receipt = "";
+    }
+
+    $order["mpesa_receipt"] = $receipt;
+
     return [
         "order"    => $order,
         "items"    => $itemStmt->fetchAll(PDO::FETCH_ASSOC),
@@ -181,6 +198,9 @@ function renderInvoicePage(array $data, string $backUrl, string $backLabel): voi
         <span class="badge" style="background:<?= $paid ? "#15803d" : "#b45309" ?>;"><?= $paid ? "PAID" : "UNPAID" ?></span>
         <?php if ($paid && !empty($order["paid_at"])): ?>
             <span>(confirmed <?= $e(date("d M Y", strtotime($order["paid_at"]))) ?>)</span>
+        <?php endif; ?>
+        <?php if (!empty($order["mpesa_receipt"])): ?>
+            <br><strong>M-Pesa receipt:</strong> <?= $e($order["mpesa_receipt"]) ?>
         <?php endif; ?>
         <br>
         <strong>Order status:</strong> <?= $e(ucfirst(str_replace("_", " ", $order["status"]))) ?>
