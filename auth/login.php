@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <section class="auth-brand-panel">
             <a href="../index.php" class="auth-brand">
                 <span class="brand-icon">HM</span>
-                <span>Human Matrix</span>
+                <span>Human Matrix<small style="display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85;">Advanced Medical Services</small></span>
             </a>
 
             <div class="brand-content">
@@ -200,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div class="mobile-brand">
                     <span class="brand-icon">HM</span>
-                    <span>Human Matrix</span>
+                    <span>Human Matrix<small style="display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85;">Advanced Medical Services</small></span>
                 </div>
 
                 <span class="form-eyebrow">WELCOME BACK</span>

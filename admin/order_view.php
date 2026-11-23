@@ -587,11 +587,12 @@ if (
         <section class="product-form-section">
             <h2>Confirm payment</h2>
             <p>
-                M-Pesa payments are confirmed automatically. For any other payment
-                (cash, bank transfer), once you have received
-                KES <?= number_format((float) $order["total_amount"], 2) ?>
-                from this facility, record it here.
-            </p>
+    Confirm payment only after independently verifying that the funds
+    have been received through M-Pesa, cash, or bank transfer.
+    Once you have received
+    KES <?= number_format((float) $order["total_amount"], 2) ?>
+    from this facility, record it here.
+</p>
             <form method="POST"
                   action="order_view.php?id=<?= (int) $order["id"] ?>">
                 <input type="hidden" name="csrf_token"

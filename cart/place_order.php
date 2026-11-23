@@ -301,6 +301,18 @@ try {
     $_SESSION["cart"] = [];
     unset($_SESSION["checkout_old"]);
 
+    // Pay-before-delivery customers go straight to the M-Pesa payment screen.
+    $mpesaHelper = __DIR__ . "/../includes/mpesa_helper.php";
+
+    if ($paymentMethod === "before_delivery" && is_file($mpesaHelper)) {
+        require_once $mpesaHelper;
+
+        if (function_exists("mpesaEnabled") && mpesaEnabled()) {
+            header("Location: ../customer/pay_mpesa.php?order_id=" . $orderId);
+            exit;
+        }
+    }
+
     header("Location: order_success.php?id=" . $orderId);
     exit;
 } catch (RuntimeException $exception) {

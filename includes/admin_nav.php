@@ -11,7 +11,8 @@ if (isset($pdo) && $pdo instanceof PDO && isset($_SESSION["user_id"])) {
 
 <aside class="admin-sidebar">
     <div class="sidebar-brand">
-        <h2>Human Matrix</h2>
+                <h2>Human Matrix</h2>
+        <p style="margin:0;font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.85;">Advanced Medical Services</p>
         <p>Administration</p>
     </div>
 

@@ -154,7 +154,7 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
 
         <a href="../index.php" class="dashboard-brand">
             <span class="brand-icon">HM</span>
-            <span>Human Matrix</span>
+                        <span>Human Matrix<small style="display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.85;">Advanced Medical Services</small></span>
         </a>
 
         <nav class="dashboard-nav" aria-label="Main navigation">

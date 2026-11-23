@@ -25,9 +25,10 @@ $cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
 <body>
 
 <header class="catalogue-header">
-    <a class="catalogue-brand" href="index.php">
-        Human<span>Matrix</span>
-    </a>
+   <a class="catalogue-brand" href="index.php">
+    Human<span>Matrix</span>
+    <small style="display:block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;line-height:1.2;opacity:.8;">Advanced Medical Services</small>
+</a>
 
     <nav class="catalogue-nav">
         <a class="active" href="index.php">Home</a>

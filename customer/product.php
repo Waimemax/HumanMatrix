@@ -125,10 +125,10 @@ try {
     <link rel="stylesheet" href="../assets/css/customer.css">
 </head>
 <body>
-
 <header class="catalogue-header">
     <a class="catalogue-brand" href="../customer/dashboard.php">
         Human<span>Matrix</span>
+        <small style="display:block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;line-height:1.2;opacity:.8;">Advanced Medical Services</small>
     </a>
 
     <nav class="catalogue-nav">
