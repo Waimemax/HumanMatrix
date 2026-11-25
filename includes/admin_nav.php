@@ -1,4 +1,6 @@
 <?php
+
+require_once __DIR__ . "/logout_form.php";
 $current_page = basename($_SERVER['PHP_SELF']);
 
 $adminUnread = 0;
@@ -67,8 +69,12 @@ if (isset($pdo) && $pdo instanceof PDO && isset($_SESSION["user_id"])) {
             My Profile
         </a>
 
-        <a href="/HumanMatrix/auth/logout.php">
-            Logout
-        </a>
+        <?php
+renderLogoutForm(
+    "/HumanMatrix/auth/logout.php",
+    "admin-logout",
+    "Logout"
+);
+?>
     </nav>
 </aside>

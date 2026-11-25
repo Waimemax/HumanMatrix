@@ -1,8 +1,13 @@
 <?php
-session_start();
+require_once __DIR__ . "/../includes/session.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../auth/login.php");
+    exit;
+}
+
+if (($_SESSION["role"] ?? "") !== "customer") {
+    header("Location: ../admin/dashboard.php");
     exit;
 }
 
@@ -13,6 +18,7 @@ if (empty($_SESSION["csrf_token"])) {
 // Messages from the cart (e.g. "Added to cart") are shown on the catalogue
 // and cart pages, so they are left untouched here.
 
+require_once "../includes/logout_form.php";
 require_once "../config/database.php";
 require_once "../includes/notifications.php";
 
@@ -117,7 +123,7 @@ if ($product) {
         <a href="orders.php">My Orders</a>
         <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
         <a href="profile.php">Profile</a>
-        <a href="../auth/logout.php">Logout</a>
+        <?php renderLogoutForm("../auth/logout.php", "catalogue-logout"); ?>
     </nav>
 </header>
 

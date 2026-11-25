@@ -1,7 +1,7 @@
 <?php
 // Answers the "waiting for payment" page with the payment's current state.
 // Save as: customer/pay_status.php
-session_start();
+require_once __DIR__ . "/../includes/session.php";
 
 header("Content-Type: application/json");
 header("Cache-Control: no-store");
@@ -9,6 +9,12 @@ header("Cache-Control: no-store");
 if (!isset($_SESSION["user_id"])) {
     http_response_code(401);
     echo json_encode(["status" => "error", "message" => "Please sign in again."]);
+    exit;
+}
+
+if (($_SESSION["role"] ?? "") !== "customer") {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "Access denied."]);
     exit;
 }
 

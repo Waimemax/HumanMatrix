@@ -1,12 +1,18 @@
 <?php
 // Pay for an order with M-Pesa.  Save as: customer/pay_mpesa.php
-session_start();
+require_once __DIR__ . "/../includes/session.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../auth/login.php");
     exit;
 }
 
+if (($_SESSION["role"] ?? "") !== "customer") {
+    header("Location: ../admin/dashboard.php");
+    exit;
+}
+
+require_once "../includes/logout_form.php";
 require_once "../config/database.php";
 require_once "../includes/mpesa_helper.php";
 
@@ -167,7 +173,7 @@ $inputStyle = "width:100%; padding:10px; border:1px solid #ccd5df; border-radius
         <a href="dashboard.php">Dashboard</a>
         <a href="product.php">Equipment</a>
         <a href="orders.php">My Orders</a>
-        <a href="../auth/logout.php">Logout</a>
+        <?php renderLogoutForm("../auth/logout.php", "catalogue-logout"); ?>
     </nav>
 </header>
 

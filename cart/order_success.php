@@ -1,8 +1,13 @@
 <?php
-session_start();
+require_once __DIR__ . "/../includes/logout_form.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../auth/login.php");
+    exit;
+}
+
+if (($_SESSION["role"] ?? "") !== "customer") {
+    header("Location: ../admin/dashboard.php");
     exit;
 }
 
@@ -90,7 +95,11 @@ try {
         <a href="../customer/orders.php">My Orders</a>
         <a href="../customer/notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
         <a href="../customer/profile.php">Profile</a>
-        <a href="../auth/logout.php">Logout</a>
+        <?php renderLogoutForm(
+    "../auth/logout.php",
+    "catalogue-logout",
+    "Logout"
+); ?>
     </nav>
 </header>
 
