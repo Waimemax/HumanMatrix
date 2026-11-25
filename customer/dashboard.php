@@ -1,13 +1,19 @@
 <?php
-session_start();
+require_once __DIR__ . "/../includes/session.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../auth/login.php");
     exit;
 }
 
+if (($_SESSION["role"] ?? "") !== "customer") {
+    header("Location: ../admin/dashboard.php");
+    exit;
+}
+
 require_once "../config/database.php";
 require_once "../includes/notifications.php";
+require_once "../includes/logout_form.php";
 
 function e($value)
 {
@@ -41,7 +47,7 @@ function statusLabel(string $status): string
 
 $customerName = $_SESSION["full_name"] ?? "Customer";
 $customerEmail = $_SESSION["email"] ?? "";
-$customerRole = $_SESSION["role"] ?? "customer";
+$customerRole = $_SESSION["role"];
 
 $safeName = e($customerName);
 $safeEmail = e($customerEmail);
@@ -164,9 +170,14 @@ $onTheWay = $statusCounts["dispatched"] + $statusCounts["in_transit"];
             <a href="orders.php">My Orders</a>
             <a href="notifications.php">Notifications<?= $unreadCount > 0 ? " (" . $unreadCount . ")" : "" ?></a>
             <a href="profile.php">My Account</a>
-            <a href="../auth/logout.php" class="dashboard-logout">
-                <span aria-hidden="true">↪</span> Logout
-            </a>
+            <?php
+renderLogoutForm(
+    "../auth/logout.php",
+    "dashboard-logout",
+    "Logout",
+    "↪"
+);
+?>
         </nav>
 
     </header>

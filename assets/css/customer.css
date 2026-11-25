@@ -517,12 +517,20 @@ button {
     color: #0879bd;
 }
 
+.dashboard-nav .logout-form {
+    margin: 0;
+}
+
 .dashboard-nav .dashboard-logout {
     padding: 10px 15px;
     border: 1px solid #dce7f0;
     border-radius: 8px;
     color: #17466d;
     background: #f8fbfe;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .dashboard-nav .dashboard-logout:hover {
@@ -892,9 +900,10 @@ a.dashboard-card:hover {
         flex-wrap: wrap;
     }
 
-    .dashboard-nav a {
-        font-size: 12px;
-    }
+   .dashboard-nav a,
+.dashboard-nav .dashboard-logout {
+    font-size: 12px;
+}
 
     .dashboard-main {
         padding: 20px 14px;
@@ -978,6 +987,26 @@ a.dashboard-card:hover {
 
 .catalogue-nav a:hover,
 .catalogue-nav a.active {
+    color: #168bc2;
+}
+
+/* Secure logout form in catalogue navigation */
+.catalogue-nav .logout-form {
+    margin: 0;
+}
+
+.catalogue-nav .catalogue-logout {
+    padding: 0;
+    border: none;
+    color: #526477;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.catalogue-nav .catalogue-logout:hover {
     color: #168bc2;
 }
 

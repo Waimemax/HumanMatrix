@@ -1,9 +1,14 @@
 
 <?php
-session_start();
+require_once __DIR__ . "/../includes/session.php";
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: ../auth/login.php");
+    exit;
+}
+
+if (($_SESSION["role"] ?? "") !== "customer") {
+    header("Location: ../admin/dashboard.php");
     exit;
 }
 

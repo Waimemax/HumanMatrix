@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . "/includes/logout_form.php";
 
 function e($value)
 {
@@ -39,7 +39,11 @@ $cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
                 <a href="cart/view.php">Cart<?= $cartCount > 0 ? " (" . $cartCount . ")" : "" ?></a>
             <?php endif; ?>
             <a href="<?= e($dashboardLink) ?>">Dashboard</a>
-            <a href="auth/logout.php">Logout</a>
+            <?php renderLogoutForm(
+    "auth/logout.php",
+    "catalogue-logout",
+    "Logout"
+); ?>
         <?php else: ?>
             <a href="auth/login.php">Login</a>
             <a href="auth/register.php">Register</a>
@@ -50,7 +54,7 @@ $cartCount = (!empty($_SESSION["cart"]) && is_array($_SESSION["cart"]))
 <main class="catalogue-main">
 
     <section class="catalogue-hero">
-        <p class="catalogue-eyebrow">HUMAN MATRIX MEDICAL SUPPLIES</p>
+        <p class="catalogue-eyebrow">HUMANMATRIX ADVANCED MEDICAL SERVICES</p>
         <h1>Medical Equipment Ordering and Delivery</h1>
         <p>
             Order hospital beds, diagnostic devices, laboratory equipment and

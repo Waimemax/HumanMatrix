@@ -46,16 +46,33 @@ body {
     gap: 8px;
 }
 
-.sidebar-nav a {
+.sidebar-nav a,
+.sidebar-nav .logout-form button {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
     color: #12304A;
     text-decoration: none;
     padding: 12px;
     border-radius: 6px;
     transition: background 0.2s;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-nav .logout-form {
+    margin: 0;
+}
+
+.sidebar-nav .logout-form button {
+    background: transparent;
+    border: none;
 }
 
 .sidebar-nav a:hover,
-.sidebar-nav a.active {
+.sidebar-nav a.active,
+.sidebar-nav .logout-form button:hover {
     background: #2476a8;
     color: white;
 }
